@@ -1,32 +1,34 @@
 from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
+import psycopg2
 import os
 
 app = Flask(__name__)
 
-# Database connection configuration
+# Get the DATABASE_URL from Render environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Fix for Render's postgres:// prefix requirement
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db = SQLAlchemy(app)
+def get_db_connection():
+    # Always use sslmode='require' on Render
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    return conn
 
 @app.route("/", methods=["GET", "POST"])
-def index():
-    student = None
-    if request.method == "POST":
-        name = request.form.get("name")
-        # SQL query to find the student by name
-        query = f"SELECT * FROM students WHERE name='{name}'"
-        result = db.session.execute(query)
-        student = result.fetchone()
+def home():
+    students = []
 
-    return render_template("index.html", student=student)
+    if request.method == "POST":
+        search_name = request.form.get("name", "").strip()
+
+        if search_name:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            # ILIKE allows case-insensitive search and partial matches
+            cur.execute("SELECT * FROM students WHERE name ILIKE %s", (f"%{search_name}%",))
+            students = cur.fetchall()
+            cur.close()
+            conn.close()
+
+    return render_template("app.html", students=students)
 
 if __name__ == "__main__":
     app.run(debug=True)
