@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Student Search</title>
+</head>
+
+<body>
+
+<h2>Search Student</h2>
+
+<form method="POST">
+
+<input type="text" name="name" placeholder="Enter student name">
+
+<button type="submit">Search</button>
+
+</form>
+
+{% if student %}
+
+<h3>Student Details</h3>
+
+<p>Name: {{student[1]}}</p>
+<p>Age: {{student[2]}}</p>
+<p>Course: {{student[3]}}</p>
+<p>Email: {{student[4]}}</p>
+
+{% endif %}
+
+</body>
+
+</html>
