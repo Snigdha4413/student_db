@@ -4,9 +4,10 @@ import os
 
 app = Flask(__name__)
 
-# Database connection
+# Database connection configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Fix for Render's postgres:// prefix requirement
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
@@ -17,16 +18,12 @@ db = SQLAlchemy(app)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-
     student = None
-
     if request.method == "POST":
         name = request.form.get("name")
-
+        # SQL query to find the student by name
         query = f"SELECT * FROM students WHERE name='{name}'"
-
         result = db.session.execute(query)
-
         student = result.fetchone()
 
     return render_template("index.html", student=student)
